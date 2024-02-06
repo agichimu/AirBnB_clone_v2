@@ -1,25 +1,25 @@
 #!/usr/bin/python3
-""" Cleans old files"""
+""" Fabric script to delete out-of-date archives """
 
-from fabric.api import *
-import os
-from datetime import datetime
-import tarfile
+from fabric.api import run, env
+from os import listdir
 
-env.hosts = ["34.73.8.171", "34.74.18.52"]
-env.user = "ubuntu"
-
+env.hosts = ['ubuntu@54.162.37.159', 'ubuntu@18.234.169.238']
 
 def do_clean(number=0):
-    """ Removes all but given number of archives"""
-    number = int(number)
-    if number < 2:
+    """ Deletes out-of-date archives """
+    if number == 0 or number == 1:
         number = 1
-    number += 1
-    number = str(number)
-    with lcd("versions"):
-        local("ls -1t | grep web_static_.*\.tgz | tail -n +" +
-              number + " | xargs -I {} rm -- {}")
-    with cd("/data/web_static/releases"):
-        run("ls -1t | grep web_static_ | tail -n +" +
-            number + " | xargs -I {} rm -rf -- {}")
+    else:
+        number += 1
+    archives = sorted(listdir("versions"))
+    archives_to_keep = archives[-number:]
+    releases = run("ls /data/web_static/releases").split()
+    releases_to_keep = releases[-number:]
+    for archive in archives:
+        if archive not in archives_to_keep:
+            run("rm versions/{}".format(archive))
+    for release in releases:
+        if release not in releases_to_keep:
+            run("rm -rf /data/web_static/releases/{}".format(release))
+
